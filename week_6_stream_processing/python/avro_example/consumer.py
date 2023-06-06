@@ -51,7 +51,7 @@ class RideAvroConsumer:
                 record = self.avro_value_deserializer(msg.value(),
                                                       SerializationContext(msg.topic(), MessageField.VALUE))
                 if record is not None:
-                    print("{}, {}".format(key, record))
+                    print(f"{key}, {record}")
             except KeyboardInterrupt:
                 break
 

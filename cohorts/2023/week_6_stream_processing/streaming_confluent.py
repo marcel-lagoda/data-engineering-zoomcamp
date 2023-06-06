@@ -5,23 +5,24 @@ from settings import CONFLUENT_CLOUD_CONFIG, GREEN_TAXI_TOPIC, FHV_TAXI_TOPIC, R
 
 
 def read_from_kafka(consume_topic: str):
-    # Spark Streaming DataFrame, connect to Kafka topic served at host in bootrap.servers option
-
-    df_stream = spark \
-        .readStream \
-        .format("kafka") \
-        .option("kafka.bootstrap.servers", CONFLUENT_CLOUD_CONFIG['bootstrap.servers']) \
-        .option("subscribe", consume_topic) \
-        .option("startingOffsets", "earliest") \
-        .option("checkpointLocation", "checkpoint") \
-        .option("kafka.security.protocol", "SASL_SSL") \
-        .option("kafka.sasl.mechanism", "PLAIN") \
-        .option("kafka.sasl.jaas.config",
-                f"""org.apache.kafka.common.security.plain.PlainLoginModule required username="{CONFLUENT_CLOUD_CONFIG['sasl.username']}" password="{CONFLUENT_CLOUD_CONFIG['sasl.password']}";""") \
-        .option("failOnDataLoss", False) \
+    return (
+        spark.readStream.format("kafka")
+        .option(
+            "kafka.bootstrap.servers",
+            CONFLUENT_CLOUD_CONFIG['bootstrap.servers'],
+        )
+        .option("subscribe", consume_topic)
+        .option("startingOffsets", "earliest")
+        .option("checkpointLocation", "checkpoint")
+        .option("kafka.security.protocol", "SASL_SSL")
+        .option("kafka.sasl.mechanism", "PLAIN")
+        .option(
+            "kafka.sasl.jaas.config",
+            f"""org.apache.kafka.common.security.plain.PlainLoginModule required username="{CONFLUENT_CLOUD_CONFIG['sasl.username']}" password="{CONFLUENT_CLOUD_CONFIG['sasl.password']}";""",
+        )
+        .option("failOnDataLoss", False)
         .load()
-
-    return df_stream
+    )
 
 
 def parse_rides(df, schema):
@@ -44,35 +45,39 @@ def parse_rides(df, schema):
 
 
 def sink_console(df, output_mode: str = 'complete', processing_time: str = '5 seconds'):
-    query = df.writeStream \
-        .outputMode(output_mode) \
-        .trigger(processingTime=processing_time) \
-        .format("console") \
-        .option("truncate", False) \
-        .start() \
+    return (
+        df.writeStream.outputMode(output_mode)
+        .trigger(processingTime=processing_time)
+        .format("console")
+        .option("truncate", False)
+        .start()
         .awaitTermination()
-    return query  # pyspark.sql.streaming.StreamingQuery
+    )
 
 
 def sink_kafka(df, topic, output_mode: str = 'complete'):
-    query = df.writeStream \
-        .format("kafka") \
-        .option("kafka.bootstrap.servers", "pkc-75m1o.europe-west3.gcp.confluent.cloud:9092") \
-        .outputMode(output_mode) \
-        .option("topic", topic) \
-        .option("checkpointLocation", "checkpoint") \
-        .option("kafka.security.protocol", "SASL_SSL") \
-        .option("kafka.sasl.mechanism", "PLAIN") \
-        .option("kafka.sasl.jaas.config",
-                f"""org.apache.kafka.common.security.plain.PlainLoginModule required username="{CONFLUENT_CLOUD_CONFIG['sasl.username']}" password="{CONFLUENT_CLOUD_CONFIG['sasl.password']}";""") \
-        .option("failOnDataLoss", False) \
+    return (
+        df.writeStream.format("kafka")
+        .option(
+            "kafka.bootstrap.servers",
+            "pkc-75m1o.europe-west3.gcp.confluent.cloud:9092",
+        )
+        .outputMode(output_mode)
+        .option("topic", topic)
+        .option("checkpointLocation", "checkpoint")
+        .option("kafka.security.protocol", "SASL_SSL")
+        .option("kafka.sasl.mechanism", "PLAIN")
+        .option(
+            "kafka.sasl.jaas.config",
+            f"""org.apache.kafka.common.security.plain.PlainLoginModule required username="{CONFLUENT_CLOUD_CONFIG['sasl.username']}" password="{CONFLUENT_CLOUD_CONFIG['sasl.password']}";""",
+        )
+        .option("failOnDataLoss", False)
         .start()
-    return query
+    )
 
 
 def op_groupby(df, column_names):
-    df_aggregation = df.groupBy(column_names).count()
-    return df_aggregation
+    return df.groupBy(column_names).count()
 
 
 if __name__ == "__main__":

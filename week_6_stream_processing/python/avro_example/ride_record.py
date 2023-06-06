@@ -26,10 +26,7 @@ class RideRecord:
 
 
 def dict_to_ride_record(obj, ctx):
-    if obj is None:
-        return None
-
-    return RideRecord.from_dict(obj)
+    return None if obj is None else RideRecord.from_dict(obj)
 
 
 def ride_record_to_dict(ride_record: RideRecord, ctx):

@@ -14,10 +14,7 @@ class RideRecordKey:
 
 
 def dict_to_ride_record_key(obj, ctx):
-    if obj is None:
-        return None
-
-    return RideRecordKey.from_dict(obj)
+    return None if obj is None else RideRecordKey.from_dict(obj)
 
 
 def ride_record_key_to_dict(ride_record_key: RideRecordKey, ctx):
