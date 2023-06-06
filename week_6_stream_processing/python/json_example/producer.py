@@ -18,15 +18,16 @@ class JsonProducer(KafkaProducer):
         with open(resource_path, 'r') as f:
             reader = csv.reader(f)
             header = next(reader)  # skip the header row
-            for row in reader:
-                records.append(Ride(arr=row))
+            records.extend(Ride(arr=row) for row in reader)
         return records
 
     def publish_rides(self, topic: str, messages: List[Ride]):
         for ride in messages:
             try:
                 record = self.producer.send(topic=topic, key=ride.pu_location_id, value=ride)
-                print('Record {} successfully produced at offset {}'.format(ride.pu_location_id, record.get().offset))
+                print(
+                    f'Record {ride.pu_location_id} successfully produced at offset {record.get().offset}'
+                )
             except KafkaTimeoutError as e:
                 print(e.__str__())
 

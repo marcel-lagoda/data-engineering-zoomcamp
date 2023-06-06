@@ -5,16 +5,14 @@ from settings import RIDE_SCHEMA, CONSUME_TOPIC_RIDES_CSV, TOPIC_WINDOWED_VENDOR
 
 
 def read_from_kafka(consume_topic: str):
-    # Spark Streaming DataFrame, connect to Kafka topic served at host in bootrap.servers option
-    df_stream = spark \
-        .readStream \
-        .format("kafka") \
-        .option("kafka.bootstrap.servers", "localhost:9092,broker:29092") \
-        .option("subscribe", consume_topic) \
-        .option("startingOffsets", "earliest") \
-        .option("checkpointLocation", "checkpoint") \
+    return (
+        spark.readStream.format("kafka")
+        .option("kafka.bootstrap.servers", "localhost:9092,broker:29092")
+        .option("subscribe", consume_topic)
+        .option("startingOffsets", "earliest")
+        .option("checkpointLocation", "checkpoint")
         .load()
-    return df_stream
+    )
 
 
 def parse_ride_from_kafka_message(df, schema):
@@ -33,13 +31,13 @@ def parse_ride_from_kafka_message(df, schema):
 
 
 def sink_console(df, output_mode: str = 'complete', processing_time: str = '5 seconds'):
-    write_query = df.writeStream \
-        .outputMode(output_mode) \
-        .trigger(processingTime=processing_time) \
-        .format("console") \
-        .option("truncate", False) \
+    return (
+        df.writeStream.outputMode(output_mode)
+        .trigger(processingTime=processing_time)
+        .format("console")
+        .option("truncate", False)
         .start()
-    return write_query  # pyspark.sql.streaming.StreamingQuery
+    )
 
 
 def sink_memory(df, query_name, query_template):
@@ -54,14 +52,14 @@ def sink_memory(df, query_name, query_template):
 
 
 def sink_kafka(df, topic):
-    write_query = df.writeStream \
-        .format("kafka") \
-        .option("kafka.bootstrap.servers", "localhost:9092,broker:29092") \
-        .outputMode('complete') \
-        .option("topic", topic) \
-        .option("checkpointLocation", "checkpoint") \
+    return (
+        df.writeStream.format("kafka")
+        .option("kafka.bootstrap.servers", "localhost:9092,broker:29092")
+        .outputMode('complete')
+        .option("topic", topic)
+        .option("checkpointLocation", "checkpoint")
         .start()
-    return write_query
+    )
 
 
 def prepare_df_to_kafka_sink(df, value_columns, key_column=None):
@@ -75,16 +73,18 @@ def prepare_df_to_kafka_sink(df, value_columns, key_column=None):
 
 
 def op_groupby(df, column_names):
-    df_aggregation = df.groupBy(column_names).count()
-    return df_aggregation
+    return df.groupBy(column_names).count()
 
 
 def op_windowed_groupby(df, window_duration, slide_duration):
-    df_windowed_aggregation = df.groupBy(
-        F.window(timeColumn=df.tpep_pickup_datetime, windowDuration=window_duration, slideDuration=slide_duration),
-        df.vendor_id
+    return df.groupBy(
+        F.window(
+            timeColumn=df.tpep_pickup_datetime,
+            windowDuration=window_duration,
+            slideDuration=slide_duration,
+        ),
+        df.vendor_id,
     ).count()
-    return df_windowed_aggregation
 
 
 if __name__ == "__main__":
